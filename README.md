@@ -40,29 +40,6 @@ It keeps the setup simple and low cost:
     └── images/
 ```
 
-## Where to place your existing website files
-
-Put your existing static site files inside the local `./website` folder.
-
-Example:
-
-```text
-website/
-├── index.html
-├── 404.html
-├── css/
-│   └── styles.css
-├── js/
-│   └── app.js
-└── images/
-    └── logo.png
-```
-
-Terraform uses `fileset()` together with `aws_s3_object` resources to upload every file in `./website` while preserving subfolders such as:
-- `css/`
-- `js/`
-- `images/`
-- any other nested folders you add
 
 ## Bucket naming guidance
 
@@ -185,40 +162,6 @@ Important details:
   - `.webp`
 - Unknown file types default to `application/octet-stream`
 
-## S3 static website limitations
-
-S3 static website hosting is simple and inexpensive, but it has a few limitations:
-
-1. **HTTP only on the website endpoint**  
-   The native S3 website endpoint does not provide HTTPS by itself.
-
-2. **No backend code**  
-   You cannot run server-side code, APIs, databases, or application logic in S3 static hosting.
-
-3. **Limited routing and rewrites**  
-   S3 supports index and error documents, but it does not provide full rewrite rules like a traditional web server.
-
-4. **Bucket must be public for direct website hosting**  
-   Because this setup does not use CloudFront, the website files are served from a public S3 bucket policy.
-
-## If your site uses client-side routing
-
-If you are deploying a single-page app that uses client-side routing, such as:
-- React Router
-- Vue Router
-- Angular routes
-
-then a direct request to a route like `/about` or `/dashboard/settings` may return an S3 404 error.
-
-### Extra change needed for client-side routing
-
-Set the S3 error document to your main page so unknown routes fall back to the app entry point:
-
-```hcl
-error_document = "index.html"
-```
-
-That lets your frontend router handle the route after the page loads.
 
 ## Clean up resources
 
