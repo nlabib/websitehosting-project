@@ -91,12 +91,21 @@ def _list_orders(user_id):
     )
     orders = []
     for o in resp.get("Items", []):
+        items = []
+        for item in o.get("items", []):
+            items.append({
+                "productId": item.get("productId", ""),
+                "name": item.get("name", ""),
+                "partNumber": item.get("partNumber", ""),
+                "price": str(item.get("price", "0")),
+                "quantity": int(item.get("quantity", 1)),
+            })
         orders.append({
             "orderId": o["orderId"],
             "total": str(o.get("total", "0")),
             "date": o.get("date", ""),
             "delivered": bool(o.get("delivered", False)),
-            "items": o.get("items", []),
+            "items": items,
         })
     return _ok(orders)
 
