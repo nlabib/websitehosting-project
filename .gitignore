@@ -37,4 +37,5 @@ website/js/.gitkeep
 .DS_Store
 **/.DS_Store
 
-docs/
+docs/*.md
+!docs/*.drawio
