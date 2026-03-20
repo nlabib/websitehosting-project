@@ -1,54 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CloudSev | Login</title>
-    <link rel="stylesheet" type="text/css" href="css/bootstrap.css" />
-  </head>
-  <body>
-    <div class="container">
-      <div class="row col-md-6 col-md-offset-3">
-        <div class="panel panel-primary">
-          <div class="panel-heading text-center">
-            <h1>Welcome to CloudSev</h1>
-            <p class="subtitle">Static storefront demo hosted from Amazon S3.</p>
-          </div>
-          <div class="panel-body">
-            <p class="page-copy">
-              This site is a static frontend demo, so the login form is for presentation only.
-              Use the button below to enter the site experience.
-            </p>
-
-            <form action="HomePage.html" method="get">
-              <div class="form-group">
-                <label for="name">Name</label>
-                <input id="name" type="text" class="form-control" name="name" placeholder="Admin" />
-              </div>
-
-              <div class="form-group">
-                <label for="email">Email</label>
-                <input id="email" type="email" class="form-control" name="email" placeholder="admin@gmail.com" />
-              </div>
-
-              <div class="form-group">
-                <label for="password">Password</label>
-                <input id="password" type="password" class="form-control" name="password" placeholder="••••••••" />
-              </div>
-
-              <div class="form-actions">
-                <input type="submit" value="Enter Storefront" />
-                <a class="button-link" href="HomePage.html">Skip to Homepage</a>
-              </div>
-            </form>
-
-            <div class="notice">
-              If you later want real logins, carts, or order history, you would add a backend API
-              and a database such as Amazon RDS. This Terraform project currently deploys the static frontend only.
-            </div>
-          </div>
-        </div>
-      </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudSev | Login</title>
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+<div class="page-center">
+  <div class="card">
+    <div class="card-header">
+      <h1><span class="logo-accent">Cloud</span>Sev</h1>
+      <p id="form-subtitle">Sign in to your account</p>
     </div>
-  </body>
+
+    <div id="alert" class="alert alert-error" style="display:none"></div>
+
+    <!-- LOGIN FORM -->
+    <form id="login-form">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input id="email" type="email" placeholder="you@example.com" required />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="••••••••" required />
+      </div>
+      <button type="submit" class="btn btn-primary" id="submit-btn">Sign In</button>
+    </form>
+
+    <!-- SIGNUP FORM (hidden by default) -->
+    <form id="signup-form" style="display:none">
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <input id="name" type="text" placeholder="Jane Doe" required />
+      </div>
+      <div class="form-group">
+        <label for="email2">Email</label>
+        <input id="email2" type="email" placeholder="you@example.com" required />
+      </div>
+      <div class="form-group">
+        <label for="password2">Password</label>
+        <input id="password2" type="password" placeholder="At least 6 characters" required minlength="6" />
+      </div>
+      <button type="submit" class="btn btn-primary" id="signup-btn">Create Account</button>
+    </form>
+
+    <div class="auth-toggle">
+      <span id="toggle-text">Don't have an account?</span>
+      <a id="toggle-link" onclick="toggleForm()">Sign up</a>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  // If already logged in, skip to home
+  if (getUser()) window.location.href = "HomePage.html";
+
+  let isLogin = true;
+
+  function toggleForm() {
+    isLogin = !isLogin;
+    document.getElementById("login-form").style.display = isLogin ? "" : "none";
+    document.getElementById("signup-form").style.display = isLogin ? "none" : "";
+    document.getElementById("form-subtitle").textContent = isLogin ? "Sign in to your account" : "Create a new account";
+    document.getElementById("toggle-text").textContent = isLogin ? "Don't have an account?" : "Already have an account?";
+    document.getElementById("toggle-link").textContent = isLogin ? "Sign up" : "Sign in";
+    document.getElementById("alert").style.display = "none";
+  }
+
+  function showAlert(msg) {
+    const el = document.getElementById("alert");
+    el.textContent = msg;
+    el.style.display = "";
+  }
+
+  function saveAndRedirect(data) {
+    localStorage.setItem("token", data.token);
+    window.location.href = "HomePage.html";
+  }
+
+  document.getElementById("login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("submit-btn");
+    btn.disabled = true;
+    btn.textContent = "Signing in…";
+    try {
+      const data = await api.login(
+        document.getElementById("email").value,
+        document.getElementById("password").value
+      );
+      saveAndRedirect(data);
+    } catch (err) {
+      showAlert(err.message);
+      btn.disabled = false;
+      btn.textContent = "Sign In";
+    }
+  });
+
+  document.getElementById("signup-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("signup-btn");
+    btn.disabled = true;
+    btn.textContent = "Creating account…";
+    try {
+      const data = await api.signup(
+        document.getElementById("name").value,
+        document.getElementById("email2").value,
+        document.getElementById("password2").value
+      );
+      saveAndRedirect(data);
+    } catch (err) {
+      showAlert(err.message);
+      btn.disabled = false;
+      btn.textContent = "Create Account";
+    }
+  });
+</script>
+</body>
 </html>
