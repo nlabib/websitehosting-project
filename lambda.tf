@@ -5,7 +5,7 @@ resource "null_resource" "install_auth_deps" {
     req_hash = filemd5("${path.module}/lambda/auth/requirements.txt")
   }
   provisioner "local-exec" {
-    command = "pip install -r ${path.module}/lambda/auth/requirements.txt -t ${path.module}/lambda/auth/ --quiet --upgrade"
+    command = "pip3 install -r ${path.module}/lambda/auth/requirements.txt -t ${path.module}/lambda/auth/ --quiet --upgrade"
   }
 }
 
@@ -14,7 +14,7 @@ resource "null_resource" "install_cart_deps" {
     req_hash = filemd5("${path.module}/lambda/cart/requirements.txt")
   }
   provisioner "local-exec" {
-    command = "pip install -r ${path.module}/lambda/cart/requirements.txt -t ${path.module}/lambda/cart/ --quiet --upgrade"
+    command = "pip3 install -r ${path.module}/lambda/cart/requirements.txt -t ${path.module}/lambda/cart/ --quiet --upgrade"
   }
 }
 
@@ -23,7 +23,7 @@ resource "null_resource" "install_orders_deps" {
     req_hash = filemd5("${path.module}/lambda/orders/requirements.txt")
   }
   provisioner "local-exec" {
-    command = "pip install -r ${path.module}/lambda/orders/requirements.txt -t ${path.module}/lambda/orders/ --quiet --upgrade"
+    command = "pip3 install -r ${path.module}/lambda/orders/requirements.txt -t ${path.module}/lambda/orders/ --quiet --upgrade"
   }
 }
 
