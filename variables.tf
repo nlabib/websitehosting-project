@@ -20,3 +20,9 @@ variable "error_document" {
   type        = string
   default     = "404.html"
 }
+
+variable "jwt_secret" {
+  description = "Secret key used to sign and verify JWTs. Keep this private."
+  type        = string
+  sensitive   = true
+}

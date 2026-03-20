@@ -12,3 +12,8 @@ output "website_url" {
   description = "Convenient HTTP URL for the hosted website."
   value       = "http://${aws_s3_bucket_website_configuration.static_site.website_endpoint}"
 }
+
+output "api_url" {
+  description = "Base URL for the CloudSev API Gateway."
+  value       = aws_apigatewayv2_api.cloudsev.api_endpoint
+}
