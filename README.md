@@ -1,33 +1,21 @@
-# AWS S3 Static Website Hosting for `Phase2_Web_Page`
+# AWS S3 Static Website Hosting with Terraform
 
-This Terraform project deploys the existing `Phase2_Web_Page` frontend to an Amazon S3 bucket configured for static website hosting.
+This Terraform project deploys a **static frontend website** to an **Amazon S3 bucket** configured for **static website hosting**.
 
-## What this version fixes
+It keeps the setup simple and low cost:
+- No EC2
+- No Amplify
+- No RDS
+- No CloudFront
+- No backend services
 
-The previous scaffold assumed your site lived in `./website`. Your actual project files are in `./Phase2_Web_Page`, so this version now uploads **that real website folder** directly.
+## What this project creates
 
-It also makes the site work better as a static deployment by:
-- adding a real `index.html` entry page
-- adding a `404.html` page
-- adding the missing `css/bootstrap.css` stylesheet the HTML already referenced
-- removing the placeholder future PHP login action so the login page works as a static navigation page
-
-## Important note about RDS
-
-Your current site is a **static frontend demo**. Amazon S3 can host it successfully by itself.
-
-You do **not** need Amazon RDS unless you want real dynamic features such as:
-- user accounts with actual authentication
-- saved shopping carts
-- persistent order history
-- admin-managed product data
-
-If you later want those features, you would normally add:
-- a backend application or API
-- database tables in Amazon RDS (or another database service)
-- authentication and server-side logic
-
-That is **not included** in this Terraform because your current project only contains static HTML and image files.
+- One S3 bucket for your website files
+- S3 static website hosting configuration
+- A public-read bucket policy for website assets
+- Terraform-managed uploads for **all files inside `./website`**
+- Outputs for the website endpoint URL after deployment
 
 ## Project structure
 
@@ -39,7 +27,7 @@ That is **not included** in this Terraform because your current project only con
 ├── README.md
 ├── terraform.tfvars.example
 ├── variables.tf
-└── Phase2_Web_Page/
+└── website/
     ├── index.html
     ├── 404.html
     ├── Login.html
@@ -48,157 +36,196 @@ That is **not included** in this Terraform because your current project only con
     ├── Products.html
     ├── UsersPastOrders.html
     ├── css/
-    │   └── bootstrap.css
-    ├── hat.png
-    ├── shirt.png
-    └── shoes.png
+    ├── js/
+    └── images/
 ```
 
-## Files that Terraform uploads
+## Where to place your existing website files
 
-Terraform uploads every file inside `Phase2_Web_Page/` and preserves subfolders such as `css/`.
-
-That means these pages and assets are deployed automatically:
-- `Phase2_Web_Page/index.html`
-- `Phase2_Web_Page/Login.html`
-- `Phase2_Web_Page/HomePage.html`
-- `Phase2_Web_Page/AccountInfo.html`
-- `Phase2_Web_Page/Products.html`
-- `Phase2_Web_Page/UsersPastOrders.html`
-- `Phase2_Web_Page/css/bootstrap.css`
-- image files like `hat.png`, `shirt.png`, and `shoes.png`
-
-## Bucket naming guidance
-
-Your S3 bucket name must:
-- be globally unique across all AWS accounts
-- use lowercase letters, numbers, and hyphens
-- not contain spaces or uppercase letters
+Put your existing static site files inside the local `./website` folder.
 
 Example:
 
 ```text
-cloudsev-static-site-2026-demo123
+website/
+├── index.html
+├── 404.html
+├── css/
+│   └── styles.css
+├── js/
+│   └── app.js
+└── images/
+    └── logo.png
 ```
 
-> **Warning:** S3 bucket names are globally unique in AWS. If the bucket name is already taken by another AWS account, `terraform apply` will fail and you must choose a different name.
+Terraform uses `fileset()` together with `aws_s3_object` resources to upload every file in `./website` while preserving subfolders such as:
+- `css/`
+- `js/`
+- `images/`
+- any other nested folders you add
 
-## Variables used
+## Bucket naming guidance
 
-This Terraform project uses these variables:
+Your S3 bucket name should:
+- be **globally unique across all AWS accounts**
+- use only lowercase letters, numbers, and hyphens
+- avoid spaces and uppercase letters
+- be easy to recognize
+
+Good example:
+
+```text
+my-portfolio-site-2026-abc123
+```
+
+> **Important:** S3 bucket names are globally unique in AWS. If someone else already uses the name you choose, `terraform apply` will fail and you must pick another name.
+
+## Variables used by this project
+
+The Terraform configuration uses these variables:
 - `aws_region`
 - `bucket_name`
 - `index_document`
 - `error_document`
 
-Recommended values for this project:
+## Before you deploy
 
-```hcl
-aws_region     = "us-east-1"
-bucket_name    = "cloudsev-static-site-2026-demo123"
-index_document = "index.html"
-error_document = "404.html"
-```
+### 1. Make sure your website files exist
 
-## AWS credentials
+Create a `website/` folder in this project if it does not already exist, and place your HTML/CSS/JS/image files inside it.
 
-Before running Terraform, make sure your AWS credentials are configured through one of the normal AWS provider methods, such as:
+At minimum, you should normally have:
+- `website/index.html`
+- `website/404.html`
+
+### 2. Configure AWS credentials
+
+Terraform will use your AWS credentials from the normal AWS provider sources, such as:
 - `aws configure`
 - environment variables like `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
 - an attached IAM role
 
-## Exact step-by-step commands
+### 3. Copy the example variables file
 
-### 1. Copy the example variables file
+Run this command:
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-### 2. Edit the variables file
+Then edit `terraform.tfvars` and set your own globally unique bucket name.
 
-Update `terraform.tfvars` with your real bucket name.
+Example:
 
-### 3. Initialize Terraform
+```hcl
+aws_region     = "us-east-1"
+bucket_name    = "my-portfolio-site-2026-abc123"
+index_document = "index.html"
+error_document = "404.html"
+```
+
+## Exact deployment commands
+
+### Terraform init
 
 ```bash
 terraform init
 ```
 
-### 4. Review the execution plan
+### Terraform plan
 
 ```bash
 terraform plan
 ```
 
-### 5. Deploy the website
+### Terraform apply
 
 ```bash
 terraform apply
 ```
 
-### 6. Print the website URL after deployment
-
-```bash
-terraform output website_url
-```
-
-### 7. Destroy the infrastructure later if needed
+### Terraform destroy
 
 ```bash
 terraform destroy
 ```
 
-## How the S3 hosting works
+## Recommended first-time workflow
 
-This Terraform configuration creates:
-- one S3 bucket
-- S3 website hosting configuration with `index.html` and `404.html`
-- a public bucket policy for website reads
-- one Terraform-managed S3 object per local file in `Phase2_Web_Page/`
+Run the commands in this order:
 
-It also assigns proper content types for common website files:
-- `.html`
-- `.css`
-- `.js`
-- `.png`
-- `.jpg`
-- `.jpeg`
-- `.gif`
-- `.svg`
-- `.webp`
+```bash
+cp terraform.tfvars.example terraform.tfvars
+terraform init
+terraform plan
+terraform apply
+```
+
+After Terraform finishes, get the website URL with:
+
+```bash
+terraform output website_url
+```
+
+## How file uploads work
+
+This project uploads **all files under `./website`** into the S3 bucket.
+
+Important details:
+- Folder structure is preserved automatically
+- Common content types are set for:
+  - `.html`
+  - `.css`
+  - `.js`
+  - `.png`
+  - `.jpg`
+  - `.jpeg`
+  - `.gif`
+  - `.svg`
+  - `.webp`
+- Unknown file types default to `application/octet-stream`
 
 ## S3 static website limitations
 
-S3 static website hosting is low cost and simple, but there are important limitations:
+S3 static website hosting is simple and inexpensive, but it has a few limitations:
 
 1. **HTTP only on the website endpoint**  
-   Native S3 website endpoints do not provide HTTPS.
+   The native S3 website endpoint does not provide HTTPS by itself.
 
-2. **No server-side code**  
-   Static S3 hosting cannot process real login forms, save carts, or query a database by itself.
+2. **No backend code**  
+   You cannot run server-side code, APIs, databases, or application logic in S3 static hosting.
 
-3. **No real database integration in this version**  
-   Even though your pages show account and order data, they are still static example values unless you add a backend and database.
+3. **Limited routing and rewrites**  
+   S3 supports index and error documents, but it does not provide full rewrite rules like a traditional web server.
 
-4. **Public bucket access is required for direct S3 website hosting**  
-   Because this setup does not use CloudFront, the bucket policy must allow public reads.
+4. **Bucket must be public for direct website hosting**  
+   Because this setup does not use CloudFront, the website files are served from a public S3 bucket policy.
 
-## If you later want real login + orders + database support
+## If your site uses client-side routing
 
-If you want this site to be fully dynamic with real data, the next architecture step would usually be something like:
-- S3 for frontend hosting
-- API Gateway + Lambda or EC2/ECS for backend logic
-- Amazon RDS for users, products, carts, and orders
+If you are deploying a single-page app that uses client-side routing, such as:
+- React Router
+- Vue Router
+- Angular routes
 
-That would be a **different Terraform project design** than the static-only version here.
+then a direct request to a route like `/about` or `/dashboard/settings` may return an S3 404 error.
 
-## Client-side routing note
+### Extra change needed for client-side routing
 
-If you later convert this site into a React, Vue, or Angular single-page app, set:
+Set the S3 error document to your main page so unknown routes fall back to the app entry point:
 
 ```hcl
 error_document = "index.html"
 ```
 
-That lets unknown routes fall back to the app entry point.
+That lets your frontend router handle the route after the page loads.
+
+## Clean up resources
+
+To remove everything created by Terraform, run:
+
+```bash
+terraform destroy
+```
+
+Terraform will delete the bucket and the uploaded website files it manages.

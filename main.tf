@@ -1,10 +1,10 @@
 # Local values keep the main resources easier to read.
 locals {
-  # Host the actual site files that already exist in this repository.
-  website_root = "${path.module}/Phase2_Web_Page"
+  # This project expects your website source files to live in ./website.
+  website_root = "${path.module}/website"
 
-  # Collect every file under the website folder and preserve nested folders,
-  # such as css/, js/, images/, and any other subdirectories.
+  # Collect every file under ./website and preserve nested folders such as
+  # css/, js/, images/, and any other subdirectories.
   website_files = fileset(local.website_root, "**")
 
   # Map common file extensions to the correct HTTP content type so browsers
@@ -27,9 +27,9 @@ resource "aws_s3_bucket" "static_site" {
   bucket = var.bucket_name
 
   tags = {
-    Name      = var.bucket_name
-    Project   = "static-website-hosting"
-    ManagedBy = "Terraform"
+    Name        = var.bucket_name
+    Project     = "static-website-hosting"
+    ManagedBy   = "Terraform"
   }
 }
 
@@ -86,7 +86,7 @@ resource "aws_s3_bucket_policy" "public_read" {
   depends_on = [aws_s3_bucket_public_access_block.static_site]
 }
 
-# Upload every file from Phase2_Web_Page into the bucket.
+# Upload every file from ./website into the bucket.
 # The object key matches the relative path so folder structure is preserved.
 resource "aws_s3_object" "website_files" {
   for_each = { for file in local.website_files : file => file }
