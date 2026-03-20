@@ -1,14 +1,24 @@
+# Terraform
 terraform.tfvars
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+
+# Lambda build artifacts
 *.zip
+**/__pycache__/
+**/*.pyc
+**/*.pyo
 lambda/auth/jwt/
-lambda/auth/PyJWT*
-lambda/auth/__pycache__/
+lambda/auth/PyJWT*/
+lambda/auth/PyJWT-*
 lambda/cart/jwt/
-lambda/cart/PyJWT*
-lambda/cart/__pycache__/
+lambda/cart/PyJWT*/
+lambda/cart/PyJWT-*
 lambda/orders/jwt/
-lambda/orders/PyJWT*
-lambda/orders/__pycache__/
-lambda/products/__pycache__/
-lambda/seeder/__pycache__/
-tests/__pycache__/
+lambda/orders/PyJWT*/
+lambda/orders/PyJWT-*
+
+# OS
+.DS_Store
+**/.DS_Store
