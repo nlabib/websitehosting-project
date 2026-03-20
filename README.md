@@ -30,6 +30,11 @@ It keeps the setup simple and low cost:
 └── website/
     ├── index.html
     ├── 404.html
+    ├── Login.html
+    ├── HomePage.html
+    ├── AccountInfo.html
+    ├── Products.html
+    ├── UsersPastOrders.html
     ├── css/
     ├── js/
     └── images/
