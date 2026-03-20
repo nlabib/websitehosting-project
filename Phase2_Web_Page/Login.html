@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>Login Page</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CloudSev | Login</title>
     <link rel="stylesheet" type="text/css" href="css/bootstrap.css" />
   </head>
   <body>
@@ -9,46 +11,44 @@
       <div class="row col-md-6 col-md-offset-3">
         <div class="panel panel-primary">
           <div class="panel-heading text-center">
-            <h1>Login</h1>
+            <h1>Welcome to CloudSev</h1>
+            <p class="subtitle">Static storefront demo hosted from Amazon S3.</p>
           </div>
           <div class="panel-body">
-			<form action="*Future*.php" method="post">
-              
+            <p class="page-copy">
+              This site is a static frontend demo, so the login form is for presentation only.
+              Use the button below to enter the site experience.
+            </p>
+
+            <form action="HomePage.html" method="get">
               <div class="form-group">
-                <label>Name</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  name="name"    
-                />
-              </div>
-			  
-			  <div class="form-group">
-                <label>Email</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  name="email"    
-                />
-              </div>
-			  
-              
-              <div class="form-group">
-                <label>Password</label>
-                <input
-                  type="password"
-                  class="form-control"
-                  name="password"
-                />
+                <label for="name">Name</label>
+                <input id="name" type="text" class="form-control" name="name" placeholder="Admin" />
               </div>
 
-              <li><a href="HomePage.html">Submit</a></li>
+              <div class="form-group">
+                <label for="email">Email</label>
+                <input id="email" type="email" class="form-control" name="email" placeholder="admin@gmail.com" />
+              </div>
+
+              <div class="form-group">
+                <label for="password">Password</label>
+                <input id="password" type="password" class="form-control" name="password" placeholder="••••••••" />
+              </div>
+
+              <div class="form-actions">
+                <input type="submit" value="Enter Storefront" />
+                <a class="button-link" href="HomePage.html">Skip to Homepage</a>
+              </div>
             </form>
-          </div>
 
+            <div class="notice">
+              If you later want real logins, carts, or order history, you would add a backend API
+              and a database such as Amazon RDS. This Terraform project currently deploys the static frontend only.
+            </div>
+          </div>
         </div>
       </div>
     </div>
-
   </body>
 </html>

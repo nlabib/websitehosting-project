@@ -1,44 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>CloudSev</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CloudSev | Products</title>
     <link rel="stylesheet" type="text/css" href="css/bootstrap.css" />
   </head>
   <body>
-    <h1>CloudSev Products</h1>
-	<table border="1" cellpadding="10">
-		<tr>
-			<th>Picture</th>
-			<th>Part Number</th>
-			<th>Price</th>
-			<th>Add to Cart</th>
-		</tr>
-		
-		<tr>
-			<td><img src="hat.png" width="50"></td>
-			<td>HAT-123</td>
-			<td>$9.99</td>
-			<td><button>Add to Cart</button></td>
-		</tr>
-		
-		<tr>
-			<td><img src="shirt.png" width="50"></td>
-			<td>SHIRT-123</td>
-			<td>$19.99</td>
-			<td><button>Add to Cart</button></td>
-		</tr>
-		
-		<tr>
-			<td><img src="shoes.png" width="50"></td>
-			<td>SHOES-123</td>
-			<td>$49.99</td>
-			<td><button>Add to Cart</button></td>
-		</tr>
-	</table>
+    <div class="container">
+      <div class="panel panel-primary">
+        <div class="panel-heading text-center">
+          <h1>CloudSev Products</h1>
+          <p class="subtitle">Example merchandise available in the static storefront demo.</p>
+        </div>
+        <div class="panel-body">
+          <div class="table-card">
+            <table class="product-table">
+              <tr>
+                <th>Picture</th>
+                <th>Part Number</th>
+                <th>Price</th>
+                <th>Action</th>
+              </tr>
+              <tr>
+                <td><img src="hat.png" alt="CloudSev hat" /></td>
+                <td>HAT-123</td>
+                <td>$9.99</td>
+                <td><button type="button">Add to Cart</button></td>
+              </tr>
+              <tr>
+                <td><img src="shirt.png" alt="CloudSev shirt" /></td>
+                <td>SHIRT-123</td>
+                <td>$19.99</td>
+                <td><button type="button">Add to Cart</button></td>
+              </tr>
+              <tr>
+                <td><img src="shoes.png" alt="CloudSev shoes" /></td>
+                <td>SHOES-123</td>
+                <td>$49.99</td>
+                <td><button type="button">Add to Cart</button></td>
+              </tr>
+            </table>
+          </div>
 
-	<li><a href="HomePage.html">Return to HomePage</a></li>
-	
-	<button>Order Products!</button>
-	
+          <div class="notice">
+            The cart buttons are visual only in this static deployment. To support real checkout, you would need
+            backend services and persistent storage.
+          </div>
+
+          <div class="inline-actions">
+            <a class="button-link" href="HomePage.html">Return to Homepage</a>
+            <a class="button-link" href="UsersPastOrders.html">View Past Orders</a>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
