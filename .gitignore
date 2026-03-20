@@ -36,3 +36,5 @@ website/js/.gitkeep
 # OS
 .DS_Store
 **/.DS_Store
+
+docs/
