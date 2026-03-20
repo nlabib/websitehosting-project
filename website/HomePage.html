@@ -1,29 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CloudSev | Home</title>
-    <link rel="stylesheet" type="text/css" href="css/bootstrap.css" />
-  </head>
-  <body>
-    <div class="container">
-      <div class="row col-md-6 col-md-offset-3">
-        <div class="panel panel-primary">
-          <div class="panel-heading text-center">
-            <h1>CloudSev Storefront</h1>
-            <p class="subtitle">Choose where you want to go next.</p>
-          </div>
-          <div class="panel-body">
-            <ul class="nav-list">
-              <li><a href="AccountInfo.html">Account Information</a></li>
-              <li><a href="Products.html">Browse Products</a></li>
-              <li><a href="UsersPastOrders.html">View Past Orders</a></li>
-              <li><a href="Login.html">Log Out</a></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudSev | Home</title>
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" href="HomePage.html"><span>Cloud</span>Sev</a>
+  <div class="navbar-links">
+    <button onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="container" style="padding-top: 3rem; padding-bottom: 3rem;">
+  <div style="text-align:center; margin-bottom: 2.5rem;">
+    <h1 style="font-size:2rem; font-weight:700;">Welcome back, <span class="logo-accent" id="user-name">…</span></h1>
+    <p style="color:var(--text-muted); margin-top:0.5rem;">What would you like to do today?</p>
+  </div>
+
+  <div class="nav-cards" style="max-width:720px; margin:0 auto;">
+    <a class="nav-card" href="Products.html">
+      <div class="nav-card-icon">🛍️</div>
+      <div class="nav-card-label">Browse Products</div>
+      <div class="nav-card-sub">Shop our catalog</div>
+    </a>
+    <a class="nav-card" href="Products.html#cart">
+      <div class="nav-card-icon">🛒</div>
+      <div class="nav-card-label">Your Cart</div>
+      <div class="nav-card-sub" id="cart-sub">Loading…</div>
+    </a>
+    <a class="nav-card" href="UsersPastOrders.html">
+      <div class="nav-card-icon">📦</div>
+      <div class="nav-card-label">Past Orders</div>
+      <div class="nav-card-sub">Order history</div>
+    </a>
+    <a class="nav-card" href="AccountInfo.html">
+      <div class="nav-card-icon">👤</div>
+      <div class="nav-card-label">Account</div>
+      <div class="nav-card-sub">Your profile</div>
+    </a>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  if (!requireAuth()) throw new Error("redirecting");
+  const user = getUser();
+  document.getElementById("user-name").textContent = user.name;
+
+  api.getCart().then(items => {
+    const count = items.reduce((s, i) => s + i.quantity, 0);
+    document.getElementById("cart-sub").textContent =
+      count === 0 ? "Your cart is empty" : `${count} item${count !== 1 ? "s" : ""} in cart`;
+  }).catch(() => {
+    document.getElementById("cart-sub").textContent = "View cart";
+  });
+</script>
+</body>
 </html>

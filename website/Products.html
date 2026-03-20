@@ -1,59 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CloudSev | Products</title>
-    <link rel="stylesheet" type="text/css" href="css/bootstrap.css" />
-  </head>
-  <body>
-    <div class="container">
-      <div class="panel panel-primary">
-        <div class="panel-heading text-center">
-          <h1>CloudSev Products</h1>
-          <p class="subtitle">Example merchandise available in the static storefront demo.</p>
-        </div>
-        <div class="panel-body">
-          <div class="table-card">
-            <table class="product-table">
-              <tr>
-                <th>Picture</th>
-                <th>Part Number</th>
-                <th>Price</th>
-                <th>Action</th>
-              </tr>
-              <tr>
-                <td><img src="hat.png" alt="CloudSev hat" /></td>
-                <td>HAT-123</td>
-                <td>$9.99</td>
-                <td><button type="button">Add to Cart</button></td>
-              </tr>
-              <tr>
-                <td><img src="shirt.png" alt="CloudSev shirt" /></td>
-                <td>SHIRT-123</td>
-                <td>$19.99</td>
-                <td><button type="button">Add to Cart</button></td>
-              </tr>
-              <tr>
-                <td><img src="shoes.png" alt="CloudSev shoes" /></td>
-                <td>SHOES-123</td>
-                <td>$49.99</td>
-                <td><button type="button">Add to Cart</button></td>
-              </tr>
-            </table>
-          </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudSev | Products</title>
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" href="HomePage.html"><span>Cloud</span>Sev</a>
+  <div class="navbar-links">
+    <a href="UsersPastOrders.html">Orders</a>
+    <a href="AccountInfo.html">Account</a>
+    <a href="#cart">Cart <span class="cart-badge" id="cart-count">0</span></a>
+    <button onclick="logout()">Logout</button>
+  </div>
+</nav>
 
-          <div class="notice">
-            The cart buttons are visual only in this static deployment. To support real checkout, you would need
-            backend services and persistent storage.
-          </div>
+<div class="container" style="padding-top:2rem; padding-bottom:3rem;">
+  <div class="page-header">
+    <h1>Products</h1>
+    <a href="HomePage.html" class="btn btn-secondary btn-sm">← Home</a>
+  </div>
 
-          <div class="inline-actions">
-            <a class="button-link" href="HomePage.html">Return to Homepage</a>
-            <a class="button-link" href="UsersPastOrders.html">View Past Orders</a>
-          </div>
-        </div>
-      </div>
+  <div id="alert" class="alert alert-error" style="display:none"></div>
+  <div id="alert-success" class="alert alert-success" style="display:none"></div>
+
+  <div id="products-loading" class="loading-state">
+    <div class="spinner"></div>
+    <p style="margin-top:1rem;">Loading products…</p>
+  </div>
+  <div id="products-grid" class="products-grid" style="display:none"></div>
+
+  <!-- CART PANEL -->
+  <div id="cart" class="cart-panel" style="display:none">
+    <h2>🛒 Your Cart</h2>
+    <div id="cart-items"></div>
+    <div class="cart-total" id="cart-total" style="display:none"></div>
+    <div style="margin-top:1rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+      <button class="btn btn-primary" style="width:auto;" onclick="checkout()" id="checkout-btn">Checkout</button>
+      <a href="UsersPastOrders.html" class="btn btn-secondary btn-sm">View Orders</a>
     </div>
-  </body>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  if (!requireAuth()) throw new Error("redirecting");
+
+  let cartItems = [];
+
+  function renderCart() {
+    const count = cartItems.reduce((s, i) => s + i.quantity, 0);
+    document.getElementById("cart-count").textContent = count;
+    const panel = document.getElementById("cart");
+    const itemsEl = document.getElementById("cart-items");
+    const totalEl = document.getElementById("cart-total");
+
+    if (count === 0) {
+      panel.style.display = "none";
+      return;
+    }
+    panel.style.display = "";
+    let total = 0;
+    itemsEl.innerHTML = cartItems.map(item => {
+      total += item.price * item.quantity;
+      return `<div class="cart-item">
+        <div>
+          <div class="cart-item-name">${item.name}</div>
+          <div class="cart-item-meta">${item.partNumber} · qty ${item.quantity}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:1rem;">
+          <span style="font-weight:700; color:var(--gold);">$${(item.price * item.quantity).toFixed(2)}</span>
+          <button class="btn btn-danger" onclick="removeItem('${item.productId}')">✕</button>
+        </div>
+      </div>`;
+    }).join("");
+    totalEl.style.display = "";
+    totalEl.textContent = `Total: $${total.toFixed(2)}`;
+  }
+
+  async function loadProducts() {
+    try {
+      const products = await api.products();
+      document.getElementById("products-loading").style.display = "none";
+      const grid = document.getElementById("products-grid");
+      grid.style.display = "";
+      grid.innerHTML = products.map(p => `
+        <div class="product-card">
+          <img src="${p.imageUrl}" alt="${p.name}" onerror="this.style.background='var(--surface-2)'" />
+          <div class="product-card-body">
+            <div class="product-card-name">${p.name}</div>
+            <div class="product-card-part">${p.partNumber}</div>
+            <div class="product-card-price">$${p.price.toFixed(2)}</div>
+            <button class="btn btn-primary btn-sm" onclick="addToCart('${p.productId}', this)">Add to Cart</button>
+          </div>
+        </div>`).join("");
+    } catch (err) {
+      document.getElementById("products-loading").style.display = "none";
+      const alert = document.getElementById("alert");
+      alert.textContent = "Failed to load products: " + err.message;
+      alert.style.display = "";
+    }
+  }
+
+  async function loadCart() {
+    try {
+      cartItems = await api.getCart();
+      renderCart();
+    } catch {}
+  }
+
+  async function addToCart(productId, btn) {
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Adding…";
+    try {
+      await api.addToCart(productId, 1);
+      cartItems = await api.getCart();
+      renderCart();
+      const success = document.getElementById("alert-success");
+      success.textContent = "Added to cart!";
+      success.style.display = "";
+      setTimeout(() => success.style.display = "none", 2000);
+      btn.textContent = "✓ Added";
+      setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
+    } catch (err) {
+      const alertEl = document.getElementById("alert");
+      alertEl.textContent = err.message;
+      alertEl.style.display = "";
+      btn.textContent = orig;
+      btn.disabled = false;
+    }
+  }
+
+  async function removeItem(productId) {
+    try {
+      await api.removeFromCart(productId);
+      cartItems = await api.getCart();
+      renderCart();
+    } catch (err) {
+      const alertEl = document.getElementById("alert");
+      alertEl.textContent = err.message;
+      alertEl.style.display = "";
+    }
+  }
+
+  async function checkout() {
+    const btn = document.getElementById("checkout-btn");
+    btn.disabled = true;
+    btn.textContent = "Processing…";
+    try {
+      const order = await api.checkout();
+      cartItems = [];
+      renderCart();
+      const success = document.getElementById("alert-success");
+      success.textContent = `Order placed! Total: $${order.total}. Order ID: ${order.orderId.slice(0,8)}…`;
+      success.style.display = "";
+    } catch (err) {
+      const alertEl = document.getElementById("alert");
+      alertEl.textContent = err.message;
+      alertEl.style.display = "";
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Checkout";
+    }
+  }
+
+  loadProducts();
+  loadCart();
+</script>
+</body>
 </html>

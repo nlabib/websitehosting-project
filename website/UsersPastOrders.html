@@ -1,54 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CloudSev | Past Orders</title>
-    <link rel="stylesheet" type="text/css" href="css/bootstrap.css" />
-  </head>
-  <body>
-    <div class="container">
-      <div class="panel panel-primary">
-        <div class="panel-heading text-center">
-          <h1>User Past Orders</h1>
-          <p class="subtitle">Example order history displayed by the static frontend.</p>
-        </div>
-        <div class="panel-body">
-          <div class="table-card">
-            <table class="orders-table">
-              <tr>
-                <th>Date Ordered</th>
-                <th>Invoice Number</th>
-                <th>Total</th>
-                <th>Delivered</th>
-              </tr>
-              <tr>
-                <td>March 18, 2026</td>
-                <td>INV-8941326685</td>
-                <td>$29.97</td>
-                <td><span class="badge badge-pending">No</span></td>
-              </tr>
-              <tr>
-                <td>January 26, 2026</td>
-                <td>INV-2316549152</td>
-                <td>$119.97</td>
-                <td><span class="badge badge-success">Yes</span></td>
-              </tr>
-              <tr>
-                <td>November 2, 2025</td>
-                <td>INV-6942326870</td>
-                <td>$9.99</td>
-                <td><span class="badge badge-success">Yes</span></td>
-              </tr>
-            </table>
-          </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudSev | Orders</title>
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" href="HomePage.html"><span>Cloud</span>Sev</a>
+  <div class="navbar-links">
+    <a href="Products.html">Products</a>
+    <a href="AccountInfo.html">Account</a>
+    <button onclick="logout()">Logout</button>
+  </div>
+</nav>
 
-          <div class="inline-actions">
-            <a class="button-link" href="HomePage.html">Return to Homepage</a>
-            <a class="button-link" href="Products.html">Browse Products</a>
+<div class="container" style="padding-top:2rem; padding-bottom:3rem;">
+  <div class="page-header">
+    <h1>Past Orders</h1>
+    <a href="Products.html" class="btn btn-secondary btn-sm">Continue Shopping</a>
+  </div>
+
+  <div id="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p style="margin-top:1rem;">Loading orders…</p>
+  </div>
+
+  <div id="empty" class="empty-state" style="display:none">
+    <div class="empty-state-icon">📦</div>
+    <p>No orders yet. <a href="Products.html" style="color:var(--gold);">Start shopping</a>.</p>
+  </div>
+
+  <div id="orders-list" style="display:none"></div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  if (!requireAuth()) throw new Error("redirecting");
+
+  function renderOrders(orders) {
+    document.getElementById("loading").style.display = "none";
+    if (orders.length === 0) {
+      document.getElementById("empty").style.display = "";
+      return;
+    }
+    const container = document.getElementById("orders-list");
+    container.style.display = "";
+    container.innerHTML = orders.map(order => `
+      <div class="card card-wide" style="max-width:100%; margin-bottom:1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+          <div>
+            <div style="font-weight:700;">Order #${order.orderId.slice(0,8).toUpperCase()}</div>
+            <div style="font-size:0.85rem; color:var(--text-muted);">${order.date}</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <span style="font-size:1.2rem; font-weight:700; color:var(--gold);">$${parseFloat(order.total).toFixed(2)}</span>
+            <span class="badge ${order.delivered ? 'badge-success' : 'badge-pending'}">${order.delivered ? 'Delivered' : 'Pending'}</span>
           </div>
         </div>
-      </div>
-    </div>
-  </body>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Part #</th>
+                <th>Price</th>
+                <th>Qty</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(order.items || []).map(item => `
+                <tr>
+                  <td>${item.name}</td>
+                  <td style="color:var(--text-muted);">${item.partNumber}</td>
+                  <td>$${parseFloat(item.price).toFixed(2)}</td>
+                  <td>${item.quantity}</td>
+                </tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>`).join("");
+  }
+
+  api.getOrders()
+    .then(renderOrders)
+    .catch(err => {
+      document.getElementById("loading").innerHTML =
+        `<p style="color:var(--danger);">Failed to load orders: ${err.message}</p>`;
+    });
+</script>
+</body>
 </html>
