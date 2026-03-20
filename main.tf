@@ -1,23 +1,42 @@
+# Local values keep the main resources easier to read.
 locals {
-  website_files = fileset(var.website_path, "**")
+  # This project expects your website source files to live in ./website.
+  website_root = "${path.module}/website"
+
+  # Collect every file under ./website and preserve nested folders such as
+  # css/, js/, images/, and any other subdirectories.
+  website_files = fileset(local.website_root, "**")
+
+  # Map common file extensions to the correct HTTP content type so browsers
+  # render assets properly when they are served from S3.
+  mime_types = {
+    html = "text/html"
+    css  = "text/css"
+    js   = "application/javascript"
+    png  = "image/png"
+    jpg  = "image/jpeg"
+    jpeg = "image/jpeg"
+    gif  = "image/gif"
+    svg  = "image/svg+xml"
+    webp = "image/webp"
+  }
 }
 
+# Create the S3 bucket that will store the static website files.
 resource "aws_s3_bucket" "static_site" {
   bucket = var.bucket_name
-  acl    = "public-read"
-
-  website {
-    index_document = var.index_document
-    error_document = var.error_document
-  }
 
   tags = {
-    Name        = "Static Website Bucket"
-    Environment = "Dev"
+    Name        = var.bucket_name
+    Project     = "static-website-hosting"
+    ManagedBy   = "Terraform"
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "static_site_block" {
+# Explicitly allow public bucket policies for this bucket.
+# S3 static website hosting needs public read access when you are not using
+# CloudFront or another private origin setup.
+resource "aws_s3_bucket_public_access_block" "static_site" {
   bucket = aws_s3_bucket.static_site.id
 
   block_public_acls       = false
@@ -26,11 +45,28 @@ resource "aws_s3_bucket_public_access_block" "static_site_block" {
   restrict_public_buckets = false
 }
 
-data "aws_iam_policy_document" "public_read_policy" {
+# Enable static website hosting and define the default index and error pages.
+resource "aws_s3_bucket_website_configuration" "static_site" {
+  bucket = aws_s3_bucket.static_site.id
+
+  index_document {
+    suffix = var.index_document
+  }
+
+  error_document {
+    key = var.error_document
+  }
+}
+
+# Build a simple policy that allows anyone on the internet to read the website
+# files. This is required for direct S3 static website hosting.
+data "aws_iam_policy_document" "public_read" {
   statement {
+    sid    = "PublicReadGetObject"
     effect = "Allow"
+
     principals {
-      type        = "AWS"
+      type        = "*"
       identifiers = ["*"]
     }
 
@@ -44,31 +80,30 @@ data "aws_iam_policy_document" "public_read_policy" {
   }
 }
 
-resource "aws_s3_bucket_policy" "static_site_policy" {
+# Attach the public-read bucket policy.
+resource "aws_s3_bucket_policy" "public_read" {
   bucket = aws_s3_bucket.static_site.id
-  policy = data.aws_iam_policy_document.public_read_policy.json
+  policy = data.aws_iam_policy_document.public_read.json
+
+  depends_on = [aws_s3_bucket_public_access_block.static_site]
 }
 
-resource "aws_s3_bucket_object" "website_objects" {
+# Upload every file from ./website into the bucket.
+# The object key matches the relative path so folder structure is preserved.
+resource "aws_s3_object" "website_files" {
   for_each = { for file in local.website_files : file => file }
 
   bucket = aws_s3_bucket.static_site.id
   key    = each.value
-  source = "${path.module}/${var.website_path}/${each.value}"
-  acl    = "public-read"
+  source = "${local.website_root}/${each.value}"
 
-  content_type = lookup({
-    "html" = "text/html",
-    "css"  = "text/css",
-    "js"   = "application/javascript",
-    "png"  = "image/png",
-    "jpg"  = "image/jpeg",
-    "jpeg" = "image/jpeg",
-    "gif"  = "image/gif",
-    "svg"  = "image/svg+xml",
-    "webp" = "image/webp",
-    "json" = "application/json",
-    "pdf"  = "application/pdf",
-    "txt"  = "text/plain"
-  }, lower(trimspace(split(".", each.value)[length(split(".", each.value)) - 1])), "application/octet-stream")
+  # Re-upload the object only when the file contents actually change.
+  etag = filemd5("${local.website_root}/${each.value}")
+
+  # Assign the proper content type based on the file extension.
+  content_type = lookup(
+    local.mime_types,
+    lower(element(reverse(split(".", each.value)), 0)),
+    "application/octet-stream"
+  )
 }

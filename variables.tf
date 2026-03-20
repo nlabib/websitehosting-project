@@ -1,28 +1,22 @@
 variable "aws_region" {
-  description = "AWS region for static website hosting, e.g. us-east-1"
+  description = "AWS region where the S3 static website bucket will be created."
   type        = string
   default     = "us-east-1"
 }
 
 variable "bucket_name" {
-  description = "Globally unique S3 bucket name for your static website"
+  description = "Globally unique name for the S3 bucket that will host the website."
   type        = string
 }
 
 variable "index_document" {
-  description = "Default index document for S3 website hosting"
+  description = "Default page that S3 returns for the site root."
   type        = string
   default     = "index.html"
 }
 
 variable "error_document" {
-  description = "Fallback error document for S3 website hosting"
+  description = "Error page that S3 returns for missing pages or website errors."
   type        = string
   default     = "404.html"
-}
-
-variable "website_path" {
-  description = "Local path to your website static files"
-  type        = string
-  default     = "website"
 }

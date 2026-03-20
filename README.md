@@ -1,107 +1,226 @@
-# Terraform AWS S3 Static Website Deployment
+# AWS S3 Static Website Hosting with Terraform
 
-## Overview
+This Terraform project deploys a **static frontend website** to an **Amazon S3 bucket** configured for **static website hosting**.
 
-This project deploys a static website to AWS S3 using Terraform. It includes:
-- S3 bucket for static website hosting
-- Public read policy for website objects
-- Website hosting configuration (index + error documents)
-- Upload of all files from local `./website` folder preserving folder structure
-- Output of website endpoint URL
+It keeps the setup simple and low cost:
+- No EC2
+- No Amplify
+- No RDS
+- No CloudFront
+- No backend services
 
-## File structure
+## What this project creates
 
-```
+- One S3 bucket for your website files
+- S3 static website hosting configuration
+- A public-read bucket policy for website assets
+- Terraform-managed uploads for **all files inside `./website`**
+- Outputs for the website endpoint URL after deployment
+
+## Project structure
+
+```text
 .
-├── README.md
-├── providers.tf
 ├── main.tf
-├── variables.tf
 ├── outputs.tf
+├── providers.tf
+├── README.md
 ├── terraform.tfvars.example
+├── variables.tf
 └── website/
     ├── index.html
     ├── 404.html
     ├── css/
     ├── js/
-    ├── images/
-    └── ...
+    └── images/
 ```
 
-## Place your website files
+## Where to place your existing website files
 
-Put your existing HTML/CSS/JS/images under `./website`:
+Put your existing static site files inside the local `./website` folder.
+
+Example:
+
+```text
+website/
+├── index.html
+├── 404.html
+├── css/
+│   └── styles.css
+├── js/
+│   └── app.js
+└── images/
+    └── logo.png
+```
+
+Terraform uses `fileset()` together with `aws_s3_object` resources to upload every file in `./website` while preserving subfolders such as:
+- `css/`
+- `js/`
+- `images/`
+- any other nested folders you add
+
+## Bucket naming guidance
+
+Your S3 bucket name should:
+- be **globally unique across all AWS accounts**
+- use only lowercase letters, numbers, and hyphens
+- avoid spaces and uppercase letters
+- be easy to recognize
+
+Good example:
+
+```text
+my-portfolio-site-2026-abc123
+```
+
+> **Important:** S3 bucket names are globally unique in AWS. If someone else already uses the name you choose, `terraform apply` will fail and you must pick another name.
+
+## Variables used by this project
+
+The Terraform configuration uses these variables:
+- `aws_region`
+- `bucket_name`
+- `index_document`
+- `error_document`
+
+## Before you deploy
+
+### 1. Make sure your website files exist
+
+Create a `website/` folder in this project if it does not already exist, and place your HTML/CSS/JS/image files inside it.
+
+At minimum, you should normally have:
 - `website/index.html`
-- `website/404.html` (or another error page)
-- `website/css/style.css`
-- `website/js/app.js`
-- `website/images/logo.png`
+- `website/404.html`
 
-Terraform preserves subfolders with `aws_s3_bucket_object` for each file.
+### 2. Configure AWS credentials
 
-## Bucket naming
+Terraform will use your AWS credentials from the normal AWS provider sources, such as:
+- `aws configure`
+- environment variables like `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+- an attached IAM role
 
-- Must be globally unique across all AWS accounts.
-- Lowercase letters, numbers, hyphens (`-`), and periods (`.`) only.
-- No uppercase, no underscores, no spaces.
-- Example: `my-static-website-2026-abcde`
+### 3. Copy the example variables file
 
-## Deploy process
-
-1. Copy example var file:
+Run this command:
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
-# edit terraform.tfvars and set a unique bucket_name
 ```
 
-2. Initialize Terraform:
+Then edit `terraform.tfvars` and set your own globally unique bucket name.
+
+Example:
+
+```hcl
+aws_region     = "us-east-1"
+bucket_name    = "my-portfolio-site-2026-abc123"
+index_document = "index.html"
+error_document = "404.html"
+```
+
+## Exact deployment commands
+
+### Terraform init
 
 ```bash
 terraform init
 ```
 
-3. Review plan:
+### Terraform plan
 
 ```bash
-terraform plan -out tfplan
+terraform plan
 ```
 
-4. Apply:
+### Terraform apply
 
 ```bash
-terraform apply tfplan
+terraform apply
 ```
 
-5. Get endpoint:
+### Terraform destroy
+
+```bash
+terraform destroy
+```
+
+## Recommended first-time workflow
+
+Run the commands in this order:
+
+```bash
+cp terraform.tfvars.example terraform.tfvars
+terraform init
+terraform plan
+terraform apply
+```
+
+After Terraform finishes, get the website URL with:
 
 ```bash
 terraform output website_url
 ```
 
-6. Clean up:
+## How file uploads work
 
-```bash
-terraform destroy -auto-approve
+This project uploads **all files under `./website`** into the S3 bucket.
+
+Important details:
+- Folder structure is preserved automatically
+- Common content types are set for:
+  - `.html`
+  - `.css`
+  - `.js`
+  - `.png`
+  - `.jpg`
+  - `.jpeg`
+  - `.gif`
+  - `.svg`
+  - `.webp`
+- Unknown file types default to `application/octet-stream`
+
+## S3 static website limitations
+
+S3 static website hosting is simple and inexpensive, but it has a few limitations:
+
+1. **HTTP only on the website endpoint**  
+   The native S3 website endpoint does not provide HTTPS by itself.
+
+2. **No backend code**  
+   You cannot run server-side code, APIs, databases, or application logic in S3 static hosting.
+
+3. **Limited routing and rewrites**  
+   S3 supports index and error documents, but it does not provide full rewrite rules like a traditional web server.
+
+4. **Bucket must be public for direct website hosting**  
+   Because this setup does not use CloudFront, the website files are served from a public S3 bucket policy.
+
+## If your site uses client-side routing
+
+If you are deploying a single-page app that uses client-side routing, such as:
+- React Router
+- Vue Router
+- Angular routes
+
+then a direct request to a route like `/about` or `/dashboard/settings` may return an S3 404 error.
+
+### Extra change needed for client-side routing
+
+Set the S3 error document to your main page so unknown routes fall back to the app entry point:
+
+```hcl
+error_document = "index.html"
 ```
 
-## Notes
+That lets your frontend router handle the route after the page loads.
 
-- S3 static hosting is HTTP only. For HTTPS, add CloudFront in a later step (not included here).
-- `bucket_name` must be unique globally; if conflicting, Terraform apply fails.
-- File uploads set content types for common extensions; unknown extensions fall back to `application/octet-stream`.
+## Clean up resources
 
-## Client-side routing (SPA) note
+To remove everything created by Terraform, run:
 
-If your site uses client-side routing (React Router, Vue Router, etc.) and deep URLs like `/app/page`, then S3 returns 404 for non-root paths.
+```bash
+terraform destroy
+```
 
-Two options:
-- Simple: set `error_document = "index.html"` so any unknown route returns index and router handles path.
-- Robust: use CloudFront + Lambda@Edge or AWS CloudFront Function to rewrite all unmatched requests to `index.html`.
-
-## Limitations of S3 static hosting
-
-- No server-side rendering or backend logic.
-- No built-in HTTPS on static website endpoint (only via CloudFront).
-- Limited redirect/rewrite support (basic index/error).
-- Large scale should consider CloudFront + caching.
+Terraform will delete the bucket and the uploaded website files it manages.
