@@ -19,6 +19,20 @@ lambda/orders/jwt/
 lambda/orders/PyJWT*/
 lambda/orders/PyJWT-*
 
+# Dev / test (local use only)
+tests/
+requirements-dev.txt
+
+# Old/unused assets
+website/css/bootstrap.css
+website/js/.gitkeep
+
+# Screenshots
+*.png
+!website/hat.png
+!website/shirt.png
+!website/shoes.png
+
 # OS
 .DS_Store
 **/.DS_Store
