@@ -1,0 +1,14 @@
+terraform.tfvars
+*.zip
+lambda/auth/jwt/
+lambda/auth/PyJWT*
+lambda/auth/__pycache__/
+lambda/cart/jwt/
+lambda/cart/PyJWT*
+lambda/cart/__pycache__/
+lambda/orders/jwt/
+lambda/orders/PyJWT*
+lambda/orders/__pycache__/
+lambda/products/__pycache__/
+lambda/seeder/__pycache__/
+tests/__pycache__/
