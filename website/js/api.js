@@ -4,7 +4,7 @@
 // actual API Gateway URL from `terraform output api_url`
 // ──────────────────────────────────────────────────────────────
 
-const API_BASE = window.API_BASE || localStorage.getItem("api_url") || "https://4s03l5ifkk.execute-api.us-east-1.amazonaws.com";
+const API_BASE = window.API_BASE || localStorage.getItem("api_url") || "https://tvclw1m9p7.execute-api.us-east-1.amazonaws.com";
 
 function getToken() {
   return localStorage.getItem("token");
