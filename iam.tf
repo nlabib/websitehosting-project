@@ -45,3 +45,17 @@ resource "aws_iam_role_policy" "dynamodb_access" {
   role   = aws_iam_role.lambda_exec.id
   policy = data.aws_iam_policy_document.dynamodb_access.json
 }
+
+data "aws_iam_policy_document" "s3_designs_access" {
+  statement {
+    effect    = "Allow"
+    actions   = ["s3:PutObject"]
+    resources = ["${aws_s3_bucket.designs.arn}/*"]
+  }
+}
+
+resource "aws_iam_role_policy" "s3_designs_access" {
+  name   = "cloudsev-s3-designs-access"
+  role   = aws_iam_role.lambda_exec.id
+  policy = data.aws_iam_policy_document.s3_designs_access.json
+}
