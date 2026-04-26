@@ -6,7 +6,7 @@ resource "aws_apigatewayv2_api" "cloudsev" {
 
   cors_configuration {
     allow_origins = ["*"]
-    allow_methods = ["GET", "POST", "DELETE", "OPTIONS"]
+    allow_methods = ["GET", "POST", "DELETE", "OPTIONS", "PUT"]
     allow_headers = ["Content-Type", "Authorization"]
     max_age       = 300
   }
@@ -151,4 +151,31 @@ resource "null_resource" "seed_products" {
     aws_dynamodb_table.products,
     aws_iam_role_policy.dynamodb_access,
   ]
+}
+
+resource "aws_apigatewayv2_integration" "custom_print" {
+  api_id                 = aws_apigatewayv2_api.cloudsev.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.custom_print.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "custom_print_upload_url" {
+  api_id    = aws_apigatewayv2_api.cloudsev.id
+  route_key = "POST /custom-print/upload-url"
+  target    = "integrations/${aws_apigatewayv2_integration.custom_print.id}"
+}
+
+resource "aws_apigatewayv2_route" "custom_print_order" {
+  api_id    = aws_apigatewayv2_api.cloudsev.id
+  route_key = "POST /custom-print/order"
+  target    = "integrations/${aws_apigatewayv2_integration.custom_print.id}"
+}
+
+resource "aws_lambda_permission" "custom_print_apigw" {
+  statement_id  = "AllowAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.custom_print.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.cloudsev.execution_arn}/*/*"
 }
