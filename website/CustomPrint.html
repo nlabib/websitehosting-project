@@ -140,11 +140,12 @@
         selectedFile.name,
         selectedFile.type || "application/octet-stream"
       );
-      await fetch(uploadUrl, {
+      const s3Res = await fetch(uploadUrl, {
         method: "PUT",
         body: selectedFile,
         headers: { "Content-Type": selectedFile.type || "application/octet-stream" },
       });
+      if (!s3Res.ok) throw new Error(`Upload failed (${s3Res.status})`);
       uploadedKey = key;
       document.getElementById("confirm-file").textContent = selectedFile.name;
       document.getElementById("confirm-notes").textContent =

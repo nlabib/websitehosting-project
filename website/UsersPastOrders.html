@@ -39,6 +39,14 @@
 <script>
   if (!requireAuth()) throw new Error("redirecting");
 
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
   function renderOrders(orders) {
     document.getElementById("loading").style.display = "none";
     if (orders.length === 0) {
@@ -61,8 +69,8 @@
         </div>
         ${order.type === 'custom-print'
           ? `<ul class="info-list">
-               <li><strong>Design</strong> <span>${order.designKey ? order.designKey.split('/').pop() : '—'}</span></li>
-               <li><strong>Notes</strong> <span>${order.notes || '—'}</span></li>
+               <li><strong>Design</strong> <span>${order.designKey ? escHtml(order.designKey.split('/').pop()) : '—'}</span></li>
+               <li><strong>Notes</strong> <span>${escHtml(order.notes || '—')}</span></li>
              </ul>`
           : `<div class="table-wrap">
                <table>
