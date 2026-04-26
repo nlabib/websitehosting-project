@@ -65,4 +65,8 @@ const api = {
     apiCall("DELETE", `/cart/${productId}`),
   checkout: () => apiCall("POST", "/orders"),
   getOrders: () => apiCall("GET", "/orders"),
+  getCustomPrintUploadUrl: (filename, contentType) =>
+    apiCall("POST", "/custom-print/upload-url", { filename, contentType }),
+  placeCustomPrintOrder: (key, notes) =>
+    apiCall("POST", "/custom-print/order", { key, notes }),
 };
