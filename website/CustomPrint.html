@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudSev | Custom Print</title>
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" href="HomePage.html"><span>Cloud</span>Sev</a>
+  <div class="navbar-links">
+    <a href="Products.html">Products</a>
+    <a href="UsersPastOrders.html">Orders</a>
+    <a href="AccountInfo.html">Account</a>
+    <button onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="container" style="padding-top:2rem; padding-bottom:3rem;">
+  <div class="page-header">
+    <h1>Custom Print</h1>
+    <a href="HomePage.html" class="btn btn-secondary btn-sm">← Home</a>
+  </div>
+
+  <div id="alert" class="alert alert-error" style="display:none"></div>
+  <div id="alert-success" class="alert alert-success" style="display:none"></div>
+
+  <div id="upload-section" class="card card-wide" style="max-width:100%;">
+    <h2 style="font-size:1.1rem; margin-bottom:1.25rem;">Upload Your Design</h2>
+
+    <div class="form-group">
+      <label>Design File</label>
+      <div id="drop-zone"
+        style="border:2px dashed var(--border); border-radius:var(--radius); padding:2.5rem; text-align:center; cursor:pointer; transition:border-color var(--transition);"
+        onclick="document.getElementById('file-input').click()">
+        <div style="font-size:2.5rem; margin-bottom:0.5rem;">🎨</div>
+        <p style="color:var(--text-muted); margin-bottom:0.5rem;">Drag &amp; drop or click to browse</p>
+        <p style="font-size:0.8rem; color:var(--text-muted);">Accepted: images (PNG, JPG, GIF, etc.) and PDF</p>
+      </div>
+      <input type="file" id="file-input" accept="image/*,.pdf" style="display:none" />
+    </div>
+
+    <div id="preview-section" style="display:none; margin-bottom:1.25rem;">
+      <label>Selected File</label>
+      <div style="display:flex; align-items:center; gap:1rem; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.75rem 1rem;">
+        <img id="preview-img" src="" alt="preview" style="width:60px; height:60px; object-fit:cover; border-radius:4px; display:none;" />
+        <div id="preview-icon" style="font-size:2rem; display:none;">📄</div>
+        <div>
+          <div id="preview-name" style="font-weight:600;"></div>
+          <div id="preview-size" style="font-size:0.8rem; color:var(--text-muted);"></div>
+        </div>
+        <button class="btn btn-danger" style="margin-left:auto;" onclick="clearFile()">✕</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <input type="text" id="notes" placeholder="e.g. print on front, size L, blue ink…" />
+    </div>
+
+    <button class="btn btn-primary" id="upload-btn" onclick="uploadAndReview()" disabled>Upload &amp; Review</button>
+  </div>
+
+  <div id="confirm-section" class="card card-wide" style="display:none; max-width:100%; margin-top:1.5rem;">
+    <h2 style="font-size:1.1rem; margin-bottom:1.25rem;">Review Your Order</h2>
+    <ul class="info-list">
+      <li><strong>File</strong> <span id="confirm-file"></span></li>
+      <li><strong>Notes</strong> <span id="confirm-notes"></span></li>
+      <li><strong>Price</strong> <span style="color:var(--gold); font-weight:700;">$25.00</span></li>
+    </ul>
+    <div style="display:flex; gap:0.75rem; margin-top:1.25rem; flex-wrap:wrap;">
+      <button class="btn btn-primary" style="width:auto;" id="order-btn" onclick="placeOrder()">Place Order</button>
+      <button class="btn btn-secondary btn-sm" onclick="cancelOrder()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  if (!requireAuth()) throw new Error("redirecting");
+
+  let uploadedKey = null;
+  let selectedFile = null;
+
+  const fileInput = document.getElementById("file-input");
+  const dropZone = document.getElementById("drop-zone");
+
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files[0]) setFile(fileInput.files[0]);
+  });
+
+  dropZone.addEventListener("dragover", e => {
+    e.preventDefault();
+    dropZone.style.borderColor = "var(--gold)";
+  });
+
+  dropZone.addEventListener("dragleave", () => {
+    dropZone.style.borderColor = "var(--border)";
+  });
+
+  dropZone.addEventListener("drop", e => {
+    e.preventDefault();
+    dropZone.style.borderColor = "var(--border)";
+    if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+  });
+
+  function setFile(file) {
+    selectedFile = file;
+    document.getElementById("preview-name").textContent = file.name;
+    document.getElementById("preview-size").textContent = (file.size / 1024).toFixed(1) + " KB";
+    document.getElementById("preview-section").style.display = "";
+    document.getElementById("upload-btn").disabled = false;
+    const img = document.getElementById("preview-img");
+    const icon = document.getElementById("preview-icon");
+    if (file.type.startsWith("image/")) {
+      img.src = URL.createObjectURL(file);
+      img.style.display = "";
+      icon.style.display = "none";
+    } else {
+      img.style.display = "none";
+      icon.style.display = "";
+    }
+  }
+
+  function clearFile() {
+    selectedFile = null;
+    fileInput.value = "";
+    document.getElementById("preview-section").style.display = "none";
+    document.getElementById("upload-btn").disabled = true;
+  }
+
+  async function uploadAndReview() {
+    const btn = document.getElementById("upload-btn");
+    btn.disabled = true;
+    btn.textContent = "Uploading…";
+    document.getElementById("alert").style.display = "none";
+    try {
+      const { uploadUrl, key } = await api.getCustomPrintUploadUrl(
+        selectedFile.name,
+        selectedFile.type || "application/octet-stream"
+      );
+      await fetch(uploadUrl, {
+        method: "PUT",
+        body: selectedFile,
+        headers: { "Content-Type": selectedFile.type || "application/octet-stream" },
+      });
+      uploadedKey = key;
+      document.getElementById("confirm-file").textContent = selectedFile.name;
+      document.getElementById("confirm-notes").textContent =
+        document.getElementById("notes").value || "—";
+      document.getElementById("upload-section").style.display = "none";
+      document.getElementById("confirm-section").style.display = "";
+    } catch (err) {
+      const alertEl = document.getElementById("alert");
+      alertEl.textContent = err.message;
+      alertEl.style.display = "";
+      btn.disabled = false;
+      btn.textContent = "Upload & Review";
+    }
+  }
+
+  async function placeOrder() {
+    const btn = document.getElementById("order-btn");
+    btn.disabled = true;
+    btn.textContent = "Placing…";
+    document.getElementById("alert").style.display = "none";
+    try {
+      const notes = document.getElementById("notes").value;
+      const { orderId } = await api.placeCustomPrintOrder(uploadedKey, notes);
+      document.getElementById("confirm-section").style.display = "none";
+      const success = document.getElementById("alert-success");
+      success.textContent = `Order placed! Order ID: ${orderId.slice(0, 8).toUpperCase()}`;
+      success.style.display = "";
+    } catch (err) {
+      const alertEl = document.getElementById("alert");
+      alertEl.textContent = err.message;
+      alertEl.style.display = "";
+      btn.disabled = false;
+      btn.textContent = "Place Order";
+    }
+  }
+
+  function cancelOrder() {
+    uploadedKey = null;
+    document.getElementById("confirm-section").style.display = "none";
+    document.getElementById("upload-section").style.display = "";
+    document.getElementById("upload-btn").disabled = !selectedFile;
+    document.getElementById("upload-btn").textContent = "Upload & Review";
+  }
+</script>
+</body>
+</html>
