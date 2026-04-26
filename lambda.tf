@@ -144,3 +144,36 @@ resource "aws_lambda_function" "seeder" {
   }
   tags = { Project = "cloudsev", ManagedBy = "Terraform" }
 }
+
+resource "null_resource" "install_custom_print_deps" {
+  triggers = {
+    req_hash = filemd5("${path.module}/lambda/custom-print/requirements.txt")
+  }
+  provisioner "local-exec" {
+    command = "pip3 install -r ${path.module}/lambda/custom-print/requirements.txt -t ${path.module}/lambda/custom-print/ --quiet --upgrade"
+  }
+}
+
+data "archive_file" "custom_print_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/lambda/custom-print"
+  output_path = "${path.module}/lambda/custom-print.zip"
+  excludes    = ["requirements.txt", "__pycache__"]
+  depends_on  = [null_resource.install_custom_print_deps]
+}
+
+resource "aws_lambda_function" "custom_print" {
+  filename         = data.archive_file.custom_print_zip.output_path
+  function_name    = "cloudsev-custom-print"
+  role             = aws_iam_role.lambda_exec.arn
+  handler          = "handler.lambda_handler"
+  runtime          = "python3.12"
+  source_code_hash = data.archive_file.custom_print_zip.output_base64sha256
+  timeout          = 15
+  environment {
+    variables = merge(local.lambda_env, {
+      DESIGNS_BUCKET = aws_s3_bucket.designs.bucket
+    })
+  }
+  tags = { Project = "cloudsev", ManagedBy = "Terraform" }
+}
