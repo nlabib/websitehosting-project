@@ -51,7 +51,7 @@
       <div class="card card-wide" style="max-width:100%; margin-bottom:1.5rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
           <div>
-            <div style="font-weight:700;">Order #${order.orderId.slice(0,8).toUpperCase()}</div>
+            <div style="font-weight:700;">Order #${order.orderId.slice(0,8).toUpperCase()}${order.type === 'custom-print' ? ' <span style="font-size:0.75rem; color:var(--gold); font-weight:400;">Custom Print</span>' : ''}</div>
             <div style="font-size:0.85rem; color:var(--text-muted);">${order.date}</div>
           </div>
           <div style="display:flex; align-items:center; gap:1rem;">
@@ -59,27 +59,27 @@
             <span class="badge ${order.delivered ? 'badge-success' : 'badge-pending'}">${order.delivered ? 'Delivered' : 'Pending'}</span>
           </div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Part #</th>
-                <th>Price</th>
-                <th>Qty</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${(order.items || []).map(item => `
-                <tr>
-                  <td>${item.name}</td>
-                  <td style="color:var(--text-muted);">${item.partNumber}</td>
-                  <td>$${parseFloat(item.price).toFixed(2)}</td>
-                  <td>${item.quantity}</td>
-                </tr>`).join("")}
-            </tbody>
-          </table>
-        </div>
+        ${order.type === 'custom-print'
+          ? `<ul class="info-list">
+               <li><strong>Design</strong> <span>${order.designKey ? order.designKey.split('/').pop() : '—'}</span></li>
+               <li><strong>Notes</strong> <span>${order.notes || '—'}</span></li>
+             </ul>`
+          : `<div class="table-wrap">
+               <table>
+                 <thead>
+                   <tr><th>Item</th><th>Part #</th><th>Price</th><th>Qty</th></tr>
+                 </thead>
+                 <tbody>
+                   ${(order.items || []).map(item => `
+                     <tr>
+                       <td>${item.name}</td>
+                       <td style="color:var(--text-muted);">${item.partNumber}</td>
+                       <td>$${parseFloat(item.price).toFixed(2)}</td>
+                       <td>${item.quantity}</td>
+                     </tr>`).join("")}
+                 </tbody>
+               </table>
+             </div>`}
       </div>`).join("");
   }
 
