@@ -100,13 +100,18 @@ def _list_orders(user_id):
                 "price": str(item.get("price", "0")),
                 "quantity": int(item.get("quantity", 1)),
             })
-        orders.append({
+        order_data = {
             "orderId": o["orderId"],
             "total": str(o.get("total", "0")),
             "date": o.get("date", ""),
             "delivered": bool(o.get("delivered", False)),
             "items": items,
-        })
+        }
+        if o.get("type") == "custom-print":
+            order_data["type"] = "custom-print"
+            order_data["notes"] = o.get("notes", "")
+            order_data["designKey"] = o.get("designKey", "")
+        orders.append(order_data)
     return _ok(orders)
 
 
