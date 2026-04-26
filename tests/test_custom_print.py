@@ -2,6 +2,8 @@ import json
 import importlib.util
 import os
 import boto3
+import jwt as _jwt
+from boto3.dynamodb.conditions import Key
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -26,12 +28,12 @@ def _signup_token(auth, email="cp@test.com"):
     return json.loads(resp["body"])["token"]
 
 
-def _event(route, token, body=None):
+def _event(route, token, body=None, path_params=None):
     return {
         "routeKey": route,
         "headers": {"authorization": f"Bearer {token}"},
         "body": json.dumps(body) if body else None,
-        "pathParameters": {},
+        "pathParameters": path_params or {},
     }
 
 
@@ -85,6 +87,15 @@ def test_place_order_creates_dynamo_record(aws_tables):
     body = json.loads(resp["body"])
     assert "orderId" in body
     assert body["total"] == "25.00"
+    # Verify the record was actually written to DynamoDB
+    user_id = _jwt.decode(token, "test-secret-key", algorithms=["HS256"])["sub"]
+    table = boto3.resource("dynamodb", region_name="us-east-1").Table("cloudsev-orders")
+    result = table.query(KeyConditionExpression=Key("userId").eq(user_id))
+    assert len(result["Items"]) == 1
+    item = result["Items"][0]
+    assert item["type"] == "custom-print"
+    assert item["designKey"] == "uploads/abc/xyz.png"
+    assert item["notes"] == "blue ink on front"
 
 
 def test_place_order_without_notes(aws_tables):
